@@ -1,6 +1,7 @@
 ''' REST sample '''
 #!flask/bin/python
 import sqlite3
+import json
 from contextlib import closing
 from flask import Flask, jsonify, abort, make_response, url_for, g, request, session, redirect, abort, render_template, flash
 
@@ -83,19 +84,16 @@ def task_to_json (task):
 def show_public_tasks_in_db():
     db = g.db
     cur = db.execute('select * from tasks')
-    result = cur.fetchone()
+    result = cur.fetchall()
+    new_tasks = []
     for row in result:
-        print(task_to_json(row))
-    '''new_task = {}
-    for row in result:
-        new_task = task_to_json(row)
-    return new_task'''
-    return task_to_json(result)
+        new_tasks.append(task_to_json(row))
+    print (new_tasks)
+    return new_tasks
 
 @app.route('/todo/api/v1.0/tasks', methods=['GET'])
 def get_tasks():
-    '''response = jsonify([show_public_tasks_in_db()])'''
-    response = jsonify([show_public_tasks_in_db()])
+    response = jsonify(show_public_tasks_in_db())
 
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
