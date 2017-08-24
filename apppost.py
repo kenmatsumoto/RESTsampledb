@@ -5,6 +5,9 @@ import json
 from contextlib import closing
 from flask import Flask, jsonify, abort, make_response, url_for, g, request, session, redirect, abort, render_template, flash
 
+# API version
+VERSION = "v1.0"
+
 # DB settings
 DATABASE = 'apppost.db'
 DEBUG = True
@@ -16,6 +19,7 @@ PASSWORD = 'default'
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('APPPOST_SETTINGS', silent=True)
+CONTEXT_ROOT = "/todo/api/" + VERSION
 
 
 def connect_db():
@@ -26,6 +30,13 @@ def connect_db():
 @app.before_request
 def before_request():
     """ 【フレームワーク用】リクエスト受信時の初期化処理 """
+    if getattr(g, 'gcnt', None) is not None:
+        g.gcnt += 1
+        g.scnt += 1
+    else:
+        g.gcnt = 0
+        g.scnt = 0
+    print("before %d  %d " % (g.gcnt, g.scnt))
     g.db = connect_db()
 
 
@@ -33,6 +44,9 @@ def before_request():
 def teardown_request(exception):
     """ 【フレームワーク用】リクエスト終了時のお掃除処理 """
     db = getattr(g, 'db', None)
+    gcnt = getattr(g, 'gcnt', None)
+    scnt = getattr(g, 'scnt', None)
+    print("tear %d  %d " % (gcnt, scnt))
     if db is not None:
         db.close()
 
@@ -56,10 +70,43 @@ def select_for_object(query_string):
     return new_tasks
 
 
-@app.route('/todo/api/v1.0/tasks', methods=['GET'])
+def update_for_object(update_string):
+    """ 【共通処理】updateの実行結果のカウント返す処理 """
+    db = g.db
+    cur = db.execute(update_string)
+    print(new_tasks)
+    return new_tasks
+
+
+@app.route(CONTEXT_ROOT + '/tasks', methods=['GET'])
 def get_tasks():
     """ 【API】全タスクリストを返却する """
     response = jsonify(select_for_object('select * from tasks'))
+    return response
+
+
+@app.route(CONTEXT_ROOT + '/tasks', methods=['POST'])
+def add_tasks():
+    """ 【API】タスクを追加する """
+    # TODO must sanitize
+    response = jsonify(update_for_object(
+        'insert into tasks (end_date,item) values (%s,%s)' % (task.end_date, task.item)))
+    return response
+
+
+@app.route(CONTEXT_ROOT + '/tasks', methods=['PUT'])
+def upd_tasks(task):
+    """ 【API】タスクを更新する """
+    response = jsonify(update_for_object(
+        'update tasks set status=%d where task_id=%d' % (int(task.status), int(task.task_id))))
+    return response
+
+
+@app.route(CONTEXT_ROOT + '/tasks', methods=['DELETE'])
+def del_tasks():
+    """ 【API】タスクを削除する """
+    response = jsonify(update_for_object(
+        'delete from tasks where task_id=%s' % (int(task.task_id))))
     return response
 
 
