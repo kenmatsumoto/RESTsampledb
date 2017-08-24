@@ -116,13 +116,13 @@ def add_tasks():
         # Change the data type for validation of end_date
         data = {"end_date": datetime.strptime(request.json.get('end_date'), '%Y-%m-%d'), "item": request.json.get('item')}
         if v.validate(data) == False:
-            response = "Argument Error"
+            #response = "Argument Error"
             return response 
     except ValueError:
-        response = "An error occurred"
+        #response = "An error occurred"
         return response
     except TypeError:
-        response = "An error occurred"
+        #response = "An error occurred"
         return response
 
     # Inject request data into database
@@ -131,10 +131,10 @@ def add_tasks():
         cur = conn.cursor()
         cur.execute("insert into tasks (end_date,item,update_record_date) values (?,?,?)" , (data.get("end_date"), data.get("item"), datetime.now()))
         conn.commit()
-        response = "Data has been injected"
+        #response = "Data has been injected"
         return response
     except sqlite3.Error as e:
-        response = "An error occurred:" % e.args[0]
+        #response = "An error occurred:" % e.args[0]
         return response
 
 @app.route(CONTEXT_ROOT + '/tasks', methods=['PUT'])
