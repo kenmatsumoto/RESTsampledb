@@ -2,8 +2,11 @@
 #!flask/bin/python
 import sqlite3
 import json
+from cerberus import Validator
 from contextlib import closing
 from flask import Flask, jsonify, abort, make_response, url_for, g, request, session, redirect, abort, render_template, flash
+from datetime import datetime, date
+from pprint import pprint
 
 # API version
 VERSION = "v1.0"
@@ -88,11 +91,51 @@ def get_tasks():
 @app.route(CONTEXT_ROOT + '/tasks', methods=['POST'])
 def add_tasks():
     """ 【API】タスクを追加する """
-    # TODO must sanitize
-    response = jsonify(update_for_object(
-        'insert into tasks (end_date,item) values (%s,%s)' % (task.end_date, task.item)))
-    return response
 
+    # Validation Definition
+    schema = {
+        'end_date': {
+            'type': 'date',
+            'required': True,
+            'empty': False,
+        },
+        'item': {
+            'type': 'string',
+            'required': True,
+            'empty': False,
+        }
+    }
+
+    # Create Validation Object
+    v = Validator(schema)
+
+    # Initialize response
+    response = ""
+
+    try:
+        # Change the data type for validation of end_date
+        data = {"end_date": datetime.strptime(request.json.get('end_date'), '%Y-%m-%d'), "item": request.json.get('item')}
+        if v.validate(data) == False:
+            response = "Argument Error"
+            return response 
+    except ValueError:
+        response = "An error occurred"
+        return response
+    except TypeError:
+        response = "An error occurred"
+        return response
+
+    # Inject request data into database
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("insert into tasks (end_date,item,update_record_date) values (?,?,?)" , (data.get("end_date"), data.get("item"), datetime.now()))
+        conn.commit()
+        response = "Data has been injected"
+        return response
+    except sqlite3.Error as e:
+        response = "An error occurred:" % e.args[0]
+        return response
 
 @app.route(CONTEXT_ROOT + '/tasks', methods=['PUT'])
 def upd_tasks(task):
