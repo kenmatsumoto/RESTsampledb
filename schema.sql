@@ -1,12 +1,9 @@
 drop table if exists tasks;
 create table tasks (
-  id integer primary key autoincrement,
-  title string not null,
-  description string not null
+  task_id integer primary key autoincrement,
+  end_date date not null,
+  item string not null,
+  status integer default 0 not null,
+  create_record_date date default current_timestamp,
+  update_record_date date
 );
-
-drop table if exists tasks_in_json;
-create table tasks_in_json (
-    id integer primary key autoincrement,
-    json json
-)

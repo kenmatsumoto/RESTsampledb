@@ -1,0 +1,2 @@
+insert into tasks (end_date,item,update_record_date) values ('2017-08-24 18:00:00','call my father',current_timestamp);
+insert into tasks (end_date,item,update_record_date) values ('2017-08-24 12:00:00','lunch meeting',current_timestamp);
